@@ -1,4 +1,4 @@
-""" TODO: """
+""" Useful utilities for crawler core """
 import re
 
 from functools import partial
