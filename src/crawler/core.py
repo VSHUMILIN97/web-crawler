@@ -9,7 +9,7 @@ from typing import List
 from aiohttp.client import ClientSession
 from aiofiles import open
 
-from src.crawler.utils import get_dirty_links, process_link
+from src.crawler.utils import get_dirty_links, tokenize_link
 
 
 def setup(argv: List[str]) -> Crawler:
@@ -42,12 +42,13 @@ class Crawler(object):
         content = await self._grep_links()
         links = [
             link for link in [
-                process_link(link, self.core_link)
+                tokenize_link(link, self.core_link)
                 for link in get_dirty_links(string=content)
             ]
             if link is not None
         ]
         tasks = [self._get_content(link) for link in links]
+        print('Links to parse - %s ' % len(tasks))
         await asyncio.gather(*tasks)
 
     async def _get_content(self, link: str) -> None:
@@ -57,7 +58,7 @@ class Crawler(object):
                 await session.read()
         data = session._body
         async with open(
-                os.path.join('parsed', link.replace('/', '_')),
+                os.path.join('parsed', link.replace('/', '_'))[:250],
                 'wb'
         ) as writer:
             await writer.write(data)

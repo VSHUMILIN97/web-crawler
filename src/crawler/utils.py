@@ -11,14 +11,15 @@ SCHEMA = re.compile(r'(http[s]?|ftp):')
 get_dirty_links = partial(re.findall, LINK)
 
 
-def process_link(link: str, core_link: str) -> Optional[str]:
+def tokenize_link(link: str, core_link: str) -> Optional[str]:
     """ Clear links array """
     if link.startswith('#'):
         return None
+    if link.startswith('//'):
+        schema = re.search(SCHEMA, core_link)
+        return ":".join([schema.group(1), link]) if schema else None
     if link.startswith('/'):
         if core_link.endswith('/'):
             return "".join([core_link, link[1:]])
         return "".join([core_link, link])
-    if link.startswith('//'):
-        schema = re.search(SCHEMA, core_link)
-        return ":".join([schema.group(1), link]) if schema else None
+    return link

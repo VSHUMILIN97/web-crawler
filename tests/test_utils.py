@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from src.crawler.utils import get_dirty_links, LINK
+from src.crawler.utils import get_dirty_links, LINK, tokenize_link
 
 
 class TestRegExp(object):
@@ -41,5 +41,18 @@ class TestRegExp(object):
         assert links[0] == result
 
 
-def test_link_parser():
-    """ Checks: TODO """
+@pytest.mark.parametrize(
+    'core, link, exp',
+    [
+        ('vk.com', 'https://www.yandex.ru/core', 'https://www.yandex.ru/core'),
+        ('vk.com', '#', None),
+        ('vk.com/', '/url/to/parse', 'vk.com/url/to/parse'),
+        ('https://vk.com', '//url/to/parse', 'https://url/to/parse'),
+        ('http://vk.com', '//url/to/parse', 'http://url/to/parse'),
+        ('vk.com', '//url/to/parse', None)
+    ]
+)
+def test_link_parser(core, link, exp):
+    """ Checks: Possibility to extract correct link (i.e. non-absolutes) """
+    actual = tokenize_link(link, core)
+    assert actual == exp
