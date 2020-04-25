@@ -7,6 +7,7 @@ import os
 from typing import List
 
 from aiohttp.client import ClientSession
+from aiohttp.client_exceptions import ClientError
 from aiofiles import open
 
 from src.crawler.utils import get_dirty_links, tokenize_link
@@ -26,16 +27,17 @@ class Crawler(object):
     async def _grep_links(self) -> str:
         """ Simple task for getting result """
         try:
-            async with ClientSession().get(
-                    self.core_link, timeout=None
-            ) as session:
-                resp = await session.text()
-            return resp
+            async with ClientSession() as session:
+                response = await session.get(self.core_link, timeout=None)
+                text = await response.text()
+            return text
         except asyncio.TimeoutError:
             exit(
                 '%s does not available ATM. Try another website'
                 % self.core_link
             )
+        finally:
+            await session.close()
 
     async def run(self):
         """ Crawler entry point for parsing web-page """
@@ -51,12 +53,25 @@ class Crawler(object):
         print('Links to parse - %s ' % len(tasks))
         await asyncio.gather(*tasks)
 
-    async def _get_content(self, link: str) -> None:
+    @staticmethod
+    async def _get_content(link: str) -> None:
         """ Task template """
-        async with ClientSession().get(url=link, timeout=None) as session:
-            if not session._body:
-                await session.read()
-        data = session._body
+        print(f'{link} parsing this site ATM')
+        try:
+            async with ClientSession() as session:
+                response = await session.get(url=link, timeout=None)
+                if response.status != 200:
+                    print(f'{link} does not contain useful content')
+                    return
+                if not response._body:
+                    data = await response.read()
+                else:
+                    data = response._body
+        except ClientError:
+            print(f'{link} not parsed')
+            return
+        finally:
+            await session.close()
         async with open(
                 os.path.join('parsed', link.replace('/', '_'))[:250],
                 'wb'

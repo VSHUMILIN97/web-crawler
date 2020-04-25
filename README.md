@@ -6,7 +6,7 @@
 
 #### TODO
 
-* Erase overhead for ClientSession
+* ~~Erase overhead for ClientSession~~
 * Add ThreadPoolExecutor
-* Utilise uvloop connections
+* ~~Utilise uvloop connections~~
 * Add Click library for proper app setup
